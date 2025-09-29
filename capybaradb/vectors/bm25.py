@@ -73,6 +73,7 @@ if __name__ == "__main__":
     Archaeologists continue discovering artifacts that reveal secrets of 
     ancient cultures.""",
     ]
+
     bm25 = BM25Index(documents)
     score = bm25.rank("Ancient civilizations")
     print(score)

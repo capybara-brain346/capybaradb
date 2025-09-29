@@ -32,7 +32,7 @@ class TFIDFEmbeddings:
 
         return idf
 
-    def compute_tfidf(self):
+    def compute_embeddings(self):
         idf = self._compute_idf()
         vocabulary = sorted(idf.keys())
         tfidf = []
@@ -76,7 +76,7 @@ if __name__ == "__main__":
     ]
 
     tfidf = TFIDFEmbeddings(documents)
-    vectors = tfidf.compute_tfidf()
+    vectors = tfidf.compute_embeddings()
 
     for i, doc_scores in enumerate(vectors, start=1):
         print(f"{i}:{doc_scores}")
