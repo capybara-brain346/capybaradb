@@ -1,44 +1,60 @@
-from transformers import AutoTokenizer, AutoModel
-import torch
-import torch.nn.functional as F
+import math
+from collections import Counter, defaultdict
+
+from .base_index import BaseIndex
+from .index_types import IndexType
 
 
-class ContextualEmbeddings:
-    def __init__(self, docs) -> None:
-        self.docs = docs
-        self.tokenizer = AutoTokenizer.from_pretrained(
-            "sentence-transformers/all-MiniLM-L6-v2"
+class BM25Index(BaseIndex):
+    def __init__(self, docs):
+        super().__init__(docs)
+        self.index_type = IndexType.BM25
+        self.tokenized_docs = [doc.lower().split() for doc in docs]
+        self.docs_length = len(docs)
+        self.avg_document_length = (
+            sum(len(doc) for doc in self.tokenized_docs) / self.docs_length
         )
-        self.model = AutoModel.from_pretrained("sentence-transformers/all-MiniLM-L6-v2")
+        self.k = 1.2
+        self.b = 0.75
+        self.df = defaultdict(int)
+        self.compute_index()
 
-    def compute_embeddings(self):
-        encoded_input = self._encode()
+    def compute_index(self):
+        for doc in self.tokenized_docs:
+            for term in set(doc):
+                self.df[term] += 1
 
-        with torch.no_grad():
-            model_output = self.model(**encoded_input)
+    def search(self, query, top_k=5):
+        scores = self.rank(query)
+        return scores[:top_k]
 
-        sentence_embeddings = self._mean_pooling(
-            model_output, encoded_input["attention_mask"]
-        )
+    def rank(self, query):
+        scores = [(i, self.score(query, i)) for i in range(self.docs_length)]
+        return sorted(scores, key=lambda x: x[1], reverse=True)
 
-        sentence_embeddings = F.normalize(sentence_embeddings, p=2, dim=1)
+    def score(self, query, doc_index):
+        doc = self.tokenized_docs[doc_index]
+        doc_len = len(doc)
+        tf = Counter(doc)
 
-        print("Sentence embeddings:")
-        print(sentence_embeddings)
+        score = 0.0
+        for term in query.lower().split():
+            if term not in tf:
+                continue
+            score += (
+                self.idf(term)
+                * (tf[term] * (self.k + 1))
+                / (
+                    tf[term]
+                    + self.k
+                    * (1 - self.b + self.b * (doc_len / self.avg_document_length))
+                )
+            )
+        return score
 
-    def _encode(self):
-        return self.tokenizer(
-            self.docs, padding=True, truncation=True, return_tensors="pt"
-        )
-
-    def _mean_pooling(self, model_output, attention_mask):
-        token_embeddings = model_output[0]
-        input_mask_expanded = (
-            attention_mask.unsqueeze(-1).expand(token_embeddings.size()).float()
-        )
-        return torch.sum(token_embeddings * input_mask_expanded, 1) / torch.clamp(
-            input_mask_expanded.sum(1), min=1e-9
-        )
+    def idf(self, term):
+        term_df = self.df.get(term, 0)
+        return math.log((self.docs_length - term_df + 0.5) / term_df + 0.5 + 1)
 
 
 if __name__ == "__main__":
@@ -70,5 +86,7 @@ if __name__ == "__main__":
     Archaeologists continue discovering artifacts that reveal secrets of 
     ancient cultures.""",
     ]
-    contextual_embeddings = ContextualEmbeddings(documents)
-    contextual_embeddings.compute_embeddings()
+
+    bm25 = BM25Index(documents)
+    score = bm25.rank("Ancient civilizations")
+    print(score)

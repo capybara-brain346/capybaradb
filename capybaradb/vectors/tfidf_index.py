@@ -1,13 +1,18 @@
 import math
 from collections import Counter, defaultdict
 
+from .base_index import BaseIndex
+from .index_types import IndexType
 
-class TFIDFEmbeddings:
+
+class TFIDFIndex(BaseIndex):
     def __init__(self, docs: list[str]) -> None:
-        self.docs = docs
+        super().__init__(docs)
+        self.index_type = IndexType.TFIDF
         self.total_documents = len(self.docs)
+        self.tfidf_vectors = None
 
-    def compute_embeddings(self):
+    def compute_index(self):
         idf = self._compute_idf()
         vocabulary = sorted(idf.keys())
         tfidf = []
@@ -17,7 +22,24 @@ class TFIDFEmbeddings:
             doc_vector = [tf[term] * idf[term] for term in vocabulary]
             tfidf.append(doc_vector)
 
+        self.tfidf_vectors = tfidf
+        self.vocabulary = vocabulary
         return tfidf
+
+    def search(self, query, top_k=5):
+        if self.tfidf_vectors is None:
+            self.compute_index()
+
+        query_tf = self._compute_tf(query)
+        query_vector = [query_tf[term] for term in self.vocabulary]
+
+        scores = []
+        for i, doc_vector in enumerate(self.tfidf_vectors):
+            score = sum(q * d for q, d in zip(query_vector, doc_vector))
+            scores.append((i, score))
+
+        scores.sort(key=lambda x: x[1], reverse=True)
+        return scores[:top_k]
 
     def _compute_tf(self, doc: str):
         words = doc.lower().split()
@@ -75,8 +97,8 @@ if __name__ == "__main__":
     ancient cultures.""",
     ]
 
-    tfidf = TFIDFEmbeddings(documents)
-    vectors = tfidf.compute_embeddings()
+    tfidf = TFIDFIndex(documents)
+    vectors = tfidf.compute_index()
 
     for i, doc_scores in enumerate(vectors, start=1):
         print(f"{i}:{doc_scores}")
