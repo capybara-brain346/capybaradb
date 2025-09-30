@@ -15,9 +15,9 @@ class BM25Index:
             for term in set(doc):
                 self.df[term] += 1
 
-    def idf(self, term):
-        term_df = self.df.get(term, 0)
-        return math.log((self.docs_length - term_df + 0.5) / term_df + 0.5 + 1)
+    def rank(self, query):
+        scores = [(i, self.score(query, i)) for i in range(self.docs_length)]
+        return sorted(scores, key=lambda x: x[1], reverse=True)
 
     def score(self, query, doc_index):
         doc = self.docs[doc_index]
@@ -39,9 +39,9 @@ class BM25Index:
             )
         return score
 
-    def rank(self, query):
-        scores = [(i, self.score(query, i)) for i in range(self.docs_length)]
-        return sorted(scores, key=lambda x: x[1], reverse=True)
+    def idf(self, term):
+        term_df = self.df.get(term, 0)
+        return math.log((self.docs_length - term_df + 0.5) / term_df + 0.5 + 1)
 
 
 if __name__ == "__main__":

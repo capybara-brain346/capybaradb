@@ -7,6 +7,18 @@ class TFIDFEmbeddings:
         self.docs = docs
         self.total_documents = len(self.docs)
 
+    def compute_embeddings(self):
+        idf = self._compute_idf()
+        vocabulary = sorted(idf.keys())
+        tfidf = []
+
+        for doc in self.docs:
+            tf = self._compute_tf(doc)
+            doc_vector = [tf[term] * idf[term] for term in vocabulary]
+            tfidf.append(doc_vector)
+
+        return tfidf
+
     def _compute_tf(self, doc: str):
         words = doc.lower().split()
         total_terms = len(words)
@@ -31,18 +43,6 @@ class TFIDFEmbeddings:
             idf[term] = math.log(self.total_documents / freq)
 
         return idf
-
-    def compute_embeddings(self):
-        idf = self._compute_idf()
-        vocabulary = sorted(idf.keys())
-        tfidf = []
-
-        for doc in self.docs:
-            tf = self._compute_tf(doc)
-            doc_vector = [tf[term] * idf[term] for term in vocabulary]
-            tfidf.append(doc_vector)
-
-        return tfidf
 
 
 if __name__ == "__main__":
