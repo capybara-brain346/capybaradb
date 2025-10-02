@@ -1,5 +1,5 @@
-from .vectors import bm25_index, contextual_index, tfidf_index
-from .vectors.base_index import BaseIndex
+from .indexing import bm25_index, contextual_index, tfidf_index
+from .indexing.base_index import BaseIndex
 
 
 class SearchEngine:

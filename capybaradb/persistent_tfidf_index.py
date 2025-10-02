@@ -4,8 +4,8 @@ from collections import Counter, defaultdict
 from typing import List, Tuple, Dict, Optional
 from contextlib import contextmanager
 
-from .vectors.base_index import BaseIndex
-from .vectors.index_types import IndexType
+from .indexing.base_index import BaseIndex
+from .indexing.index_types import IndexType
 
 
 class PersistentTFIDFIndex(BaseIndex):
