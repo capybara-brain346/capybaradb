@@ -52,8 +52,23 @@ class EmbeddingModel:
 
         return sentence_embeddings
 
-    def search(self, query: str, embeddings: List, top_k: int):
-        pass
+    def search(
+        self, query: str, embeddings: torch.Tensor, top_k: int
+    ) -> tuple[torch.Tensor, torch.Tensor]:
+        query_embedding = self.embed(query)
+
+        if self.precision == "binary":
+            similarities = torch.matmul(
+                embeddings.float(), query_embedding.t().float()
+            ) / query_embedding.size(1)
+        else:
+            similarities = torch.matmul(embeddings, query_embedding.t())
+
+        scores, indices = torch.topk(
+            similarities.squeeze(), min(top_k, embeddings.size(0))
+        )
+
+        return indices, scores
 
     def _mean_pooling(self, model_output, attention_mask):
         token_embeddings = model_output[0]

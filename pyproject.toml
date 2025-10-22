@@ -8,4 +8,5 @@ dependencies = [
     "torch>=2.8.0",
     "transformers>=4.56.2",
     "numpy>=2.0.0",
+    "pydantic>=2.12.3",
 ]
