@@ -1,15 +1,12 @@
 import logging
-from .logger import setup_logger
 from typing import Dict, List, Union, Optional
 import torch
 import uuid
-from .model import EmbeddingModel
+import tiktoken
 from typing_extensions import Literal
 
-try:
-    import tiktoken
-except Exception:
-    tiktoken = None
+from .logger import setup_logger
+from .model import EmbeddingModel
 
 
 class Index:
