@@ -1,13 +1,17 @@
 from transformers import AutoTokenizer, AutoModel
 import torch
 import torch.nn.functional as F
+import os
+from typing import Optional
+import numpy as np
 
 from .base_index import BaseIndex
 from .index_types import IndexType
+from ..npy_store import NpyVectorStore
 
 
 class ContextualIndex(BaseIndex):
-    def __init__(self, docs) -> None:
+    def __init__(self, docs, persist_dir: Optional[str] = None) -> None:
         super().__init__(docs)
         self.index_type = IndexType.CONTEXTUAL
         self.tokenizer = AutoTokenizer.from_pretrained(
@@ -15,6 +19,12 @@ class ContextualIndex(BaseIndex):
         )
         self.model = AutoModel.from_pretrained("sentence-transformers/all-MiniLM-L6-v2")
         self.embeddings = None
+        self.persist_dir = persist_dir
+        self._npy_store = (
+            None
+            if persist_dir is None
+            else NpyVectorStore(os.path.join(persist_dir, "embeddings.npy"))
+        )
 
     def compute_index(self):
         encoded_input = self._encode()
@@ -28,10 +38,13 @@ class ContextualIndex(BaseIndex):
 
         sentence_embeddings = F.normalize(sentence_embeddings, p=2, dim=1)
         self.embeddings = sentence_embeddings
+        if self._npy_store is not None:
+            arr = self.embeddings.detach().cpu().numpy().astype(np.float32)
+            self._npy_store.save(arr)
         return sentence_embeddings
 
     def search(self, query, top_k=5):
-        if self.embeddings is None:
+        if self.embeddings is None and self._npy_store is None:
             self.compute_index()
 
         query_encoded = self.tokenizer(
@@ -46,10 +59,21 @@ class ContextualIndex(BaseIndex):
         )
         query_embedding = F.normalize(query_embedding, p=2, dim=1)
 
+        if self.embeddings is not None:
+            similarities = F.cosine_similarity(query_embedding, self.embeddings)
+            scores = [(i, similarities[i].item()) for i in range(len(self.docs))]
+            scores.sort(key=lambda x: x[1], reverse=True)
+            return scores[:top_k]
+
+        if self._npy_store is not None and self._npy_store.exists():
+            q_vec = query_embedding.squeeze(0).detach().cpu().numpy().astype(np.float32)
+            top = self._npy_store.top_k_cosine(q_vec, top_k)
+            return top
+
+        self.compute_index()
         similarities = F.cosine_similarity(query_embedding, self.embeddings)
         scores = [(i, similarities[i].item()) for i in range(len(self.docs))]
         scores.sort(key=lambda x: x[1], reverse=True)
-
         return scores[:top_k]
 
     def _encode(self):
