@@ -1,6 +1,6 @@
 from pathlib import Path
 from typing import Union, List
-import PyPDF2
+import pypdf
 from docx import Document
 from pdf2image import convert_from_path
 from PIL import Image
@@ -23,7 +23,7 @@ def extract_text_from_pdf(file_path: Union[str, Path], use_ocr: bool = False, oc
 
     try:
         with open(file_path, "rb") as file:
-            pdf_reader = PyPDF2.PdfReader(file)
+            pdf_reader = pypdf.PdfReader(file)
             text = ""
 
             for page_num in range(len(pdf_reader.pages)):
@@ -40,7 +40,7 @@ def extract_text_from_pdf(file_path: Union[str, Path], use_ocr: bool = False, oc
 
             return text
 
-    except PyPDF2.errors.PdfReadError as e:
+    except pypdf.errors.PdfReadError as e:
         if use_ocr:
             try:
                 images = convert_pdf_to_images(file_path, ocr_dpi)
@@ -50,7 +50,7 @@ def extract_text_from_pdf(file_path: Union[str, Path], use_ocr: bool = False, oc
             except Exception as ocr_error:
                 raise Exception(f"Both regular and OCR extraction failed: {e}, {ocr_error}")
         else:
-            raise PyPDF2.errors.PdfReadError(f"Error reading PDF file: {e}")
+            raise pypdf.errors.PdfReadError(f"Error reading PDF file: {e}")
     except Exception as e:
         if use_ocr:
             try:
