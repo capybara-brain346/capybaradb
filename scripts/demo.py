@@ -32,7 +32,7 @@ def main():
     print("\nTrying to read and index a text file...")
     try:
         text = extract_text_from_file(
-            "./test/data/CNN-Based Classifiers and Fine-Tune.txt"
+            "./tests/data/CNN-Based Classifiers and Fine-Tune.txt"
         )
         doc_id = db.add_document(text)
         print(f"Successfully added text file with ID: {doc_id}")
