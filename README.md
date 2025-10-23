@@ -1,10 +1,12 @@
-# CapybaraDB
+### capybaradb
 
-A lightweight vector database implementation built from scratch in Python. CapybaraDB provides semantic search capabilities using transformer-based embeddings, with support for document chunking, multiple file formats, and flexible storage options.
+A lightweight vector database implementation built from scratch in Python. CapybaraDB provides semantic search capabilities using with support for document chunking, text extraction functions from multiple file formats, and flexible storage options.
 
-## Features
+---
 
-- **Semantic Search**: Powered by sentence-transformers for accurate semantic similarity search
+### Features
+
+- **Semantic Search**: sentence-transformers for accurate semantic similarity search
 - **Document Chunking**: Optional token-based chunking using tiktoken for better search granularity
 - **Multiple File Formats**: Support for PDF, DOCX, and TXT files with OCR capabilities
 - **Flexible Storage**: In-memory or persistent storage with automatic serialization
@@ -12,10 +14,28 @@ A lightweight vector database implementation built from scratch in Python. Capyb
 - **Precision Control**: Support for different precision levels (float32, float16, binary)
 - **Collection Management**: Organize documents into named collections
 
-## Installation
+### Installation
 
+Clone the repo
 ```bash
-pip install capybaradb
+git clone https://github.com/capybara-brain346/capybaradb.git
+```
+```bash
+cd capybaradb
+```
+Setup environment
+
+**using venv**
+```bash
+python -m venv venv
+source venv/bin/activate  # on macOS/Linux
+venv\Scripts\activate     # on Windows
+pip install -r requirements.txt
+```
+
+**using uv**
+```bash
+uv sync
 ```
 
 ## Quick Start
@@ -42,7 +62,7 @@ for result in results:
 db.save()
 ```
 
-## File Processing
+### File Processing
 
 CapybaraDB can process various file formats:
 
@@ -58,7 +78,7 @@ text = extract_text_from_file("document.txt")
 doc_id = db.add_document(text)
 ```
 
-## Configuration Options
+### Configuration Options
 
 ```python
 db = CapybaraDB(
@@ -70,9 +90,7 @@ db = CapybaraDB(
 )
 ```
 
-## API Reference
-
-### CapybaraDB
+### API Reference
 
 #### Constructor
 - `collection` (str, optional): Name of the collection
@@ -89,25 +107,6 @@ db = CapybaraDB(
 - `load()`: Load the database from disk
 - `clear()`: Clear all data from the database
 
-## Architecture
-
-CapybaraDB is built with a modular architecture:
-
-- **CapybaraDB**: Main database class that orchestrates all operations
-- **Index**: Manages document storage, chunking, and vector operations
-- **EmbeddingModel**: Handles text embedding using sentence-transformers
-- **Storage**: Provides persistence layer with NPZ file format
-- **Utils**: File processing utilities for various document formats
-
-## Requirements
-
-- Python >= 3.12
-- PyTorch >= 2.8.0
-- Transformers >= 4.56.2
-- NumPy >= 2.0.0
-- tiktoken >= 0.12.0 (for chunking)
-- Additional dependencies for file processing (pypdf, python-docx, pdf2image, Pillow)
-
-## License
+### License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
