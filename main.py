@@ -11,6 +11,7 @@ Run this file directly for a quick demo (requires model & tiktoken for chunking)
 
 from time import sleep
 import logging
+import torch
 
 from capybaradb import CapybaraDB
 
@@ -18,7 +19,12 @@ from capybaradb import CapybaraDB
 def demo() -> None:
     logging.basicConfig(level=logging.INFO)
 
-    db = CapybaraDB(chunking=True, chunk_size=64, precision="float32", device="cpu")
+    db = CapybaraDB(
+        chunking=True,
+        chunk_size=64,
+        precision="binary",
+        device="cuda" if torch.cuda.is_available() else "cpu",
+    )
 
     docs = [
         "The quick brown fox jumps over the lazy dog.",

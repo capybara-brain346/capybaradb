@@ -22,11 +22,7 @@ class EmbeddingModel:
 
         if precision == "float16":
             self.model = AutoModel.from_pretrained(
-                self.model_name, torch_dtype=torch.float16
-            ).to(device)
-        elif precision == "float32":
-            self.model = AutoModel.from_pretrained(
-                self.model_name, torch_dtype=torch.float32
+                self.model_name, dtype=torch.float16
             ).to(device)
         else:
             self.model = AutoModel.from_pretrained(self.model_name).to(device)
