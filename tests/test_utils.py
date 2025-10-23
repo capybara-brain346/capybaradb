@@ -3,7 +3,7 @@ import tempfile
 from pathlib import Path
 from unittest.mock import Mock, patch, MagicMock
 from PIL import Image
-import PyPDF2
+import pypdf
 from docx import Document
 
 from capybaradb.utils import (
@@ -91,7 +91,7 @@ class TestTextExtraction:
         with pytest.raises(Exception, match="Error processing DOCX file"):
             extract_text_from_docx(docx_file)
 
-    @patch("capybaradb.utils.PyPDF2.PdfReader")
+    @patch("capybaradb.utils.pypdf.PdfReader")
     def test_extract_text_from_pdf_success(
         self, mock_pdf_reader, temp_dir, sample_text
     ):
@@ -120,28 +120,28 @@ class TestTextExtraction:
         with pytest.raises(ValueError, match="File is not a PDF"):
             extract_text_from_pdf(txt_file)
 
-    @patch("capybaradb.utils.PyPDF2.PdfReader")
+    @patch("capybaradb.utils.pypdf.PdfReader")
     def test_extract_text_from_pdf_read_error_without_ocr(
         self, mock_pdf_reader, temp_dir
     ):
         pdf_file = temp_dir / "test.pdf"
         pdf_file.touch()
 
-        mock_pdf_reader.side_effect = PyPDF2.errors.PdfReadError("Test error")
+        mock_pdf_reader.side_effect = pypdf.errors.PdfReadError("Test error")
 
-        with pytest.raises(PyPDF2.errors.PdfReadError):
+        with pytest.raises(pypdf.errors.PdfReadError):
             extract_text_from_pdf(pdf_file, use_ocr=False)
 
     @patch("capybaradb.utils.convert_pdf_to_images")
     @patch("capybaradb.utils.OCRProcessor")
-    @patch("capybaradb.utils.PyPDF2.PdfReader")
+    @patch("capybaradb.utils.pypdf.PdfReader")
     def test_extract_text_from_pdf_with_ocr_fallback(
         self, mock_pdf_reader, mock_ocr_class, mock_convert, temp_dir
     ):
         pdf_file = temp_dir / "test.pdf"
         pdf_file.touch()
 
-        mock_pdf_reader.side_effect = PyPDF2.errors.PdfReadError("Test error")
+        mock_pdf_reader.side_effect = pypdf.errors.PdfReadError("Test error")
 
         mock_image = Mock(spec=Image.Image)
         mock_convert.return_value = [mock_image]

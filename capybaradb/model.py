@@ -52,6 +52,9 @@ class EmbeddingModel:
         self, query: str, embeddings: torch.Tensor, top_k: int
     ) -> tuple[torch.Tensor, torch.Tensor]:
         query_embedding = self.embed(query)
+        
+        if query_embedding.device != embeddings.device:
+            query_embedding = query_embedding.to(embeddings.device)
 
         if self.precision == "binary":
             similarities = torch.matmul(

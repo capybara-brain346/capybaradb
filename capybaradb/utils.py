@@ -12,7 +12,12 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-def extract_text_from_pdf(file_path: Union[str, Path], use_ocr: bool = False, ocr_model: str = "microsoft/trocr-base-printed", ocr_dpi: int = 300) -> str:
+def extract_text_from_pdf(
+    file_path: Union[str, Path],
+    use_ocr: bool = False,
+    ocr_model: str = "microsoft/trocr-base-printed",
+    ocr_dpi: int = 300,
+) -> str:
     file_path = Path(file_path)
 
     if not file_path.exists():
@@ -40,17 +45,6 @@ def extract_text_from_pdf(file_path: Union[str, Path], use_ocr: bool = False, oc
 
             return text
 
-    except pypdf.errors.PdfReadError as e:
-        if use_ocr:
-            try:
-                images = convert_pdf_to_images(file_path, ocr_dpi)
-                if images:
-                    ocr_processor = OCRProcessor(ocr_model)
-                    return ocr_processor.extract_text_from_images(images)
-            except Exception as ocr_error:
-                raise Exception(f"Both regular and OCR extraction failed: {e}, {ocr_error}")
-        else:
-            raise pypdf.errors.PdfReadError(f"Error reading PDF file: {e}")
     except Exception as e:
         if use_ocr:
             try:
@@ -59,18 +53,18 @@ def extract_text_from_pdf(file_path: Union[str, Path], use_ocr: bool = False, oc
                     ocr_processor = OCRProcessor(ocr_model)
                     return ocr_processor.extract_text_from_images(images)
             except Exception as ocr_error:
-                raise Exception(f"Both regular and OCR extraction failed: {e}, {ocr_error}")
+                raise Exception(
+                    f"Both regular and OCR extraction failed: {e}, {ocr_error}"
+                )
         else:
-            raise Exception(f"Unexpected error processing PDF: {e}")
+            raise Exception(f"Error reading PDF file: {e}")
 
 
-def extract_text_from_docx(file_path: Union[str, Path]) -> str:
-    file_path = Path(file_path)
-
-    if not file_path.exists():
+def extract_text_from_docx(file_path: str) -> str:
+    if not Path(file_path).exists():
         raise FileNotFoundError(f"DOCX file not found: {file_path}")
 
-    if not file_path.suffix.lower() == ".docx":
+    if not Path(file_path).suffix.lower() == ".docx":
         raise ValueError(f"File is not a DOCX: {file_path}")
 
     try:
@@ -107,7 +101,9 @@ def extract_text_from_txt(file_path: Union[str, Path], encoding: str = "utf-8") 
         raise Exception(f"Error processing TXT file: {e}")
 
 
-def extract_text_from_file(file_path: Union[str, Path], encoding: str = "utf-8", use_ocr: bool = False) -> str:
+def extract_text_from_file(
+    file_path: Union[str, Path], encoding: str = "utf-8", use_ocr: bool = False
+) -> str:
     file_path = Path(file_path)
     file_extension = file_path.suffix.lower()
 
@@ -184,5 +180,3 @@ def convert_pdf_to_images(
         return images
     except Exception as e:
         raise Exception(f"Failed to convert PDF to images: {e}")
-
-

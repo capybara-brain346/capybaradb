@@ -35,7 +35,7 @@ class TestIntegrationWithRealFiles:
         assert is_supported_file(txt_file)
         assert is_supported_file(docx_file)
 
-    @patch("capybaradb.utils.PyPDF2.PdfReader")
+    @patch("capybaradb.utils.pypdf.PdfReader")
     def test_pdf_text_extraction_integration(self, mock_pdf_reader, pdf_file):
         mock_page = Mock()
         mock_page.extract_text.return_value = "Sample PDF content for testing"

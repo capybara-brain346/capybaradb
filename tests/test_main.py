@@ -31,6 +31,7 @@ class TestCapybaraDB:
         assert db.chunking is False
         assert db.chunk_size == 512
         assert isinstance(db.index, Index)
+        assert db.index.storage.in_memory is True  # Default should be in-memory
         mock_embedding_model.assert_called_once_with(precision="float32", device="cpu")
         mock_logger.assert_called_once()
 
@@ -41,11 +42,16 @@ class TestCapybaraDB:
         mock_embedding_model.return_value = Mock()
 
         db = CapybaraDB(
-            chunking=True, chunk_size=256, precision="float16", device="cuda"
+            collection="test_collection",
+            chunking=True, 
+            chunk_size=256, 
+            precision="float16", 
+            device="cuda"
         )
 
         assert db.chunking is True
         assert db.chunk_size == 256
+        assert db.index.storage.in_memory is False  # Should use disk storage
         mock_embedding_model.assert_called_once_with(precision="float16", device="cuda")
 
     @patch("capybaradb.main.EmbeddingModel")
