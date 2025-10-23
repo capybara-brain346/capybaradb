@@ -14,6 +14,7 @@ import logging
 import torch
 
 from capybaradb import CapybaraDB
+from capybaradb.utils import extract_text_from_pdf
 
 
 def demo() -> None:
@@ -33,11 +34,13 @@ def demo() -> None:
     ]
 
     print("Adding documents...")
+    input_text = extract_text_from_pdf(
+        "./tests/data/Fine-Tuned LLM_SLM Use Cases in TrackML-Backend.pdf"
+    )
     ids: list[str] = []
-    for d in docs:
-        doc_id = db.add_document(d)
-        print(f"added doc {doc_id[:8]}...")
-        ids.append(doc_id)
+    doc_id = db.add_document(input_text)
+    print(f"added doc {doc_id[:8]}...")
+    ids.append(doc_id)
 
     sleep(0.1)
 
@@ -51,10 +54,9 @@ def demo() -> None:
         print("\nQuery:", q)
         results = db.search(q, top_k=3)
         for r in results:
-            print(f"score={r['score']:.4f} doc_id={r['doc_id'][:8]} text={r['text']}")
-
-    print("\nRetrieving full document:")
-    print(db.get_document(ids[1]))
+            print(
+                f"score={r['score']} | doc_id={r['doc_id']} | chunk_id={r['chunk_id']} | text={r['text']}"
+            )
 
 
 if __name__ == "__main__":
