@@ -1,0 +1,147 @@
+CNN-Based Classifiers and Fine-Tuned Vision-Language Models for Skin Analysis: A Review
+Abstract
+Skin diseases are among the most prevalent health conditions globally and early, accurate diagnosis is critical for effective treatment. Deep learning techniques, particularly Convolutional Neural Networks (CNNs), have achieved strong performance in automated skin lesion detection and classification. More recently, Vision-Language Models (VLMs) adapted and fine-tuned for medical imaging are emerging as a promising approach to provide multimodal, explainable, and context-aware diagnosis. This review synthesizes recent literature on CNN-based classifiers and fine-tuned VLMs for skin analysis, comparing architectures, datasets, training strategies, evaluation metrics, interpretability approaches, and open challenges. We highlight research gaps and propose directions for student projects and future work.
+
+1. Introduction
+Dermatological diagnosis relies heavily on visual inspection by trained clinicians, which can be time-consuming and subjective. Automated image analysis offers the potential to improve screening throughput and reduce diagnostic variability. Historically, CNNs have dominated the domain of image-based skin analysis due to their capacity for hierarchical feature learning. Recently, the field has expanded to multimodal approaches that combine visual understanding with textual reasoning to produce more interpretable outputs and leverage weakly-labeled or text-rich datasets.
+This review focuses on two complementary streams of research:
+CNN-based classifiers for skin disease detection and classification.
+Fine-tuned vision-language models designed to bring multimodal reasoning to dermatology.
+We synthesize findings from recent IEEE and other high-quality publications (2020–2025), comparing methods and identifying opportunities for further research.
+2. CNN-Based Classifiers for Skin Analysis
+Evolution of Architectures
+Convolutional Neural Networks (CNNs) such as VGG, ResNet, DenseNet, Inception, and Inception-ResNet form the backbone of many dermatology classification pipelines. Early works established that CNNs, often through transfer learning, achieve state-of-the-art performance for melanoma detection and multi-class lesion classification. Comparative studies show DenseNet and Inception-ResNet variants frequently outperform older architectures on standard benchmarks.
+Transfer Learning and Data Augmentation
+Transfer learning from ImageNet-pretrained weights is a common strategy to accelerate convergence and improve generalization on medical image datasets like HAM10000, ISIC, and Derm7pt. Data augmentation (geometric transforms, color jitter, and adversarial augmentation) and class-imbalance techniques (oversampling, weighted loss) are widely used to mitigate limited labeled data.
+Custom Architectures and Hybrid Approaches
+Lightweight architectures such as SkinLesNet demonstrate competitive performance in low-resource settings. Hybrid approaches that combine CNNs with classical classifiers such as SVMs, or that integrate attention modules, can yield performance gains—particularly in multi-class, imbalanced datasets.
+Evaluation and Benchmarks
+Evaluation typically uses metrics such as accuracy, sensitivity (recall), specificity, F1-score, and AUC-ROC. Benchmarking on publicly available datasets permits cross-study comparison but also highlights limitations: differences in preprocessing, varying annotation quality, and uneven class distributions impede direct comparison.
+Limitations of Purely CNN-Based Systems
+Lack of interpretability: CNNs provide high performance but limited human-understandable reasoning.
+Dataset bias and generalization issues: models can underperform across skin tones, imaging devices, and clinical settings.
+Vulnerability to image artifacts and domain shifts.
+
+
+
+3. Vision-Language Models (VLMs) in Dermatology
+What are VLMs and Why Do They Matter?
+Vision-Language Models combine visual encoders (CNNs, ViTs) with text encoders (transformers/LMs) to learn multimodal representations. In medical applications, VLMs enable models to reason about images in the context of clinical text, which can improve generalization and provide textual explanations or summaries alongside a prediction.
+Fine-Tuning Strategies for Medical VLMs
+Effective strategies for adapting VLMs to dermatology include:
+Parameter-efficient fine-tuning (PEFT) methods such as LoRA and Adapters.
+Concept-adaptive fine-tuning that aligns model concepts with clinical terminology.
+Two-step pipelines where an off-the-shelf VLM provides visual embeddings which are then refined by a domain model (e.g., a medical LLM) for diagnosis and explanation.
+Representative Systems
+SkinGEN proposes an explainable diagnosis-to-generation framework using diffusion-based generation and LoRA-style tuning to provide visual and textual explanations for skin conditions.
+Concept-adaptive systems (e.g., BiomedCLIP variants) show how aligning clinical concepts with visual patterns improves interpretability.
+Advantages and Challenges of VLMs
+Advantages:
+Multimodal reasoning and natural language explanations.
+Potential for few-shot or zero-shot generalization using textual guidance.
+
+
+Challenges:
+Large computational and data requirements for fine-tuning.
+Requirement for curated image-text pairs in dermatology.
+Risk of hallucinations or clinically incorrect textual explanations if not carefully constrained.
+
+
+
+4. Comparative Analysis
+Dimension
+CNN-only
+VLM (Fine-tuned)
+Input
+Images only
+Images + Text
+Interpretability
+Low (saliency maps, attention)
+Higher (textual explanations)
+Data needs
+Labeled images
+Image-text pairs or weak labels
+Compute
+Lower (lighter)
+Higher (larger models)
+Generalization
+Good for known classes
+Better for concept generalization
+
+Both paradigms have complementary strengths. CNNs remain practical and efficient for high-performance classification pipelines; VLMs enrich systems with explainability and multimodal reasoning, which is valuable for clinical adoption.
+
+5. Datasets, Preprocessing, and Evaluation Protocols
+Common Datasets
+HAM10000 (Human Against Machine with 10000 training images): multi-class skin lesion dataset.
+ISIC (International Skin Imaging Collaboration): widely used for lesion detection and segmentation challenges.
+Derm7pt: contains clinical and dermoscopic metadata useful for multimodal experiments.
+
+
+Preprocessing and Standardization
+Common steps include image resizing/cropping, color normalization, hair removal (in dermoscopy), and artifact filtering. Standardized preprocessing pipelines are essential to reduce variance between studies.
+Evaluation Best Practices
+Use stratified train/validation/test splits and cross-validation where feasible.
+Report multiple metrics (sensitivity, specificity, AUC) and confidence intervals.
+Include ablation studies that clarify the contribution of model components.
+
+
+
+6. Ethical, Regulatory, and Practical Considerations
+Bias and fairness: Evaluate model performance across skin tones and demographic groups.
+Privacy: Medical images require strict handling; de-identification and secure storage are necessary.
+Clinical validation: Models must undergo prospective clinical trials and external validation before deployment.
+Explainability: Clinician-facing systems need clear, verifiable explanations and uncertainty estimates.
+
+
+
+
+7. Research Gaps and Future Directions
+Key open areas where students and researchers can contribute:
+Lightweight multimodal models for mobile and low-resource deployment.
+Creation of image–text dermatology datasets (pairing dermoscopic/clinical images with expert captions and findings).
+Parameter-efficient fine-tuning experiments (LoRA, Adapters) on VLMs for dermatology to reduce compute cost.
+Explainability frameworks combining concept-based vocabularies and counterfactual explanations specific to dermatology.
+Cross-domain generalization studies across populations, imaging devices, and clinical settings.
+
+
+
+8. Conclusion
+CNNs have made substantial, demonstrable progress in automated skin disease classification. The emergence of VLMs tailored to medical imaging introduces a promising direction toward interpretable and context-aware diagnostic systems. The combination of efficient CNN backbones with carefully fine-tuned vision-language components appears to be a pragmatic path forward for research and student projects aiming at clinical impact.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+References
+[1] "Skin Disease Detection Using CNN," IEEE, 2024. Available: https://ieeexplore.ieee.org/document/10503480/
+[2] "Classification of Skin Diseases Using Convolutional Neural Networks," IEEE, 2024. Available: https://ieeexplore.ieee.org/document/10545241/
+[3] "Skin Cancer Classification using CNN and Transfer Learning," IEEE, 2024. Available: https://ieeexplore.ieee.org/document/10544854/
+[4] "Skin Cancer Classification: Analysis of Different CNN Models," IEEE, 2025. Available: https://ieeexplore.ieee.org/document/10952122/
+[5] "SkinLesNet: Classification of Skin Lesions and Detection," PMC, 2023. Available: https://pmc.ncbi.nlm.nih.gov/articles/PMC10778045/
+[6] "A Deep Learning Analysis on Facial Skin Using CNN," IEEE, 2024. Available: https://ieeexplore.ieee.org/document/10884292/
+[7] "An Innovative CNN-SVM Methodology for Lesion Detection," IEEE, 2024. Available: https://ieeexplore.ieee.org/document/10692102/
+[8] "Optimized Convolutional Neural Network Models for Skin Lesion Classification," TechScience, 2024. Available: https://www.techscience.com/cmc/v70n2/44641/html
+[9] "Improved CNN Architecture for Automated Classification of Common Skin Diseases," Taylor & Francis, 2024. Available: https://www.tandfonline.com/doi/full/10.1080/21681163.2024.2420727
+[10] "Skin Lesions Classification Using CNN," IJRASET, 2024. Available: https://www.ijraset.com/research-paper/skin-lesions-classification-using-cnn
+[11] "Skin Cancer Classification using CNN in Comparison with SVM," IEEE, 2024. Available: https://ieeexplore.ieee.org/document/10047280/
+[12] "SkinGEN: an Explainable Dermatology Diagnosis-to-Generation Framework," ACM, 2024. Available: https://dl.acm.org/doi/10.1145/3708359.3712098
+[13] "SkinGEN" (preprint), arXiv, 2024. Available: https://arxiv.org/abs/2404.14755
+[14] "Taming Vision-Language Models for Medical Image Analysis," arXiv, 2025. Available: https://arxiv.org/html/2506.18378v1
+[15] "A two-step concept-based approach for enhanced vision-language modeling of skin disease," Elsevier, 2025. Available: https://www.sciencedirect.com/science/article/pii/S2001037025000418
+[16] "Concept Adaptive Fine-Tuning of Vision-Language Models," PubMed, 2025. Available: https://pubmed.ncbi.nlm.nih.gov/40920523/
+[17] "Classification of Skin Cancer Detection using CNN – A Review," IEEE, 2024. Available: https://ieeexplore.ieee.org/document/10739311/
+[18] "Skin Cancer Classification With Deep Learning – Review," PMC, 2023. Available: https://pmc.ncbi.nlm.nih.gov/articles/PMC9327733/
+[19] "Skin Lesion Classification With Deep Convolutional Neural Networks," JMIR Dermatology, 2020. Available: https://derma.jmir.org/2020/1/e18438/
+

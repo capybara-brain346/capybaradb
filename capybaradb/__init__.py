@@ -1,4 +1,3 @@
-from .indexing import BM25Index, TFIDFIndex, ContextualIndex
-from .search_engine import SearchEngine
+from .main import CapybaraDB
 
-__all__ = ["BM25Index", "TFIDFIndex", "ContextualIndex", "SearchEngine"]
+__all__ = ["CapybaraDB"]
