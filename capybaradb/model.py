@@ -27,7 +27,7 @@ class EmbeddingModel:
         else:
             self.model = AutoModel.from_pretrained(self.model_name).to(device)
 
-    def embed(self, documents: Union[str, List[str]]):
+    def embed(self, documents: Union[str, List[str]]) -> torch.Tensor:
         encoded_documents = self.tokenizer(
             documents, padding=True, truncation=True, return_tensors="pt"
         )
@@ -52,7 +52,7 @@ class EmbeddingModel:
         self, query: str, embeddings: torch.Tensor, top_k: int
     ) -> tuple[torch.Tensor, torch.Tensor]:
         query_embedding = self.embed(query)
-        
+
         if query_embedding.device != embeddings.device:
             query_embedding = query_embedding.to(embeddings.device)
 
@@ -69,7 +69,7 @@ class EmbeddingModel:
 
         return indices, scores
 
-    def _mean_pooling(self, model_output, attention_mask):
+    def _mean_pooling(self, model_output, attention_mask) -> torch.Tensor:
         token_embeddings = model_output[0]
         input_mask_expanded = (
             attention_mask.unsqueeze(-1).expand(token_embeddings.size()).float()
