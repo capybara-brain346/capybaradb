@@ -1,4 +1,7 @@
-### capybaradb
+<img width="1152" height="896" alt="Gemini_Generated_Image_oeet41oeet41oeet" src="https://github.com/user-attachments/assets/f47de56c-1003-40fd-8f5a-212e50259f44" />
+
+## capybaradb
+
 
 A lightweight vector database implementation built from scratch in Python. CapybaraDB provides semantic search capabilities using with support for document chunking, text extraction functions from multiple file formats, and flexible storage options.
 
