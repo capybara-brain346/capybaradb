@@ -1,0 +1,179 @@
+{
+  "dataset": "Synthetic",
+  "chunk_size": 512,
+  "precision_at_k": {
+    "1": 1.0,
+    "3": 0.7555555555555554,
+    "5": 0.4800000000000001,
+    "10": 0.24000000000000005
+  },
+  "recall_at_k": {
+    "1": 0.4333333333333333,
+    "3": 0.9555555555555555,
+    "5": 1.0,
+    "10": 1.0
+  },
+  "f1_at_k": {
+    "1": 0.6,
+    "3": 0.8355555555555557,
+    "5": 0.6428571428571427,
+    "10": 0.38461538461538464
+  },
+  "ndcg_at_k": {
+    "1": 1.0,
+    "3": 0.9539146869546086,
+    "5": 0.9794912962238019,
+    "10": 0.9794912962238019
+  },
+  "map": 0.9559259259259261,
+  "mrr": 1.0,
+  "examples": [
+    {
+      "chunk_size": 512,
+      "query_id": "0",
+      "query": "machine learning algorithms",
+      "relevant_ids": [
+        "ml_basics",
+        "ml_types",
+        "deep_learning"
+      ],
+      "retrieved_ids": [
+        "ml_basics",
+        "ml_types",
+        "deep_learning",
+        "python_data",
+        "nlp_basics"
+      ],
+      "results": [
+        {
+          "doc_id": "ml_basics",
+          "score": 0.6557601690292358,
+          "is_relevant": true,
+          "text_preview": "Machine learning is a method of data analysis that automates analytical model building. It is a branch of artificial intelligence based on the idea th"
+        },
+        {
+          "doc_id": "ml_types",
+          "score": 0.549018383026123,
+          "is_relevant": true,
+          "text_preview": "There are three main types of machine learning: supervised learning, unsupervised learning, and reinforcement learning. Supervised learning uses label"
+        },
+        {
+          "doc_id": "deep_learning",
+          "score": 0.4328651428222656,
+          "is_relevant": true,
+          "text_preview": "Deep learning is a subset of machine learning that uses neural networks with multiple layers. These deep neural networks can automatically learn hiera"
+        },
+        {
+          "doc_id": "python_data",
+          "score": 0.34565597772598267,
+          "is_relevant": false,
+          "text_preview": "Python has become the dominant language for data science and machine learning. Libraries like NumPy, Pandas, and Scikit-learn provide powerful tools f"
+        },
+        {
+          "doc_id": "nlp_basics",
+          "score": 0.3323670029640198,
+          "is_relevant": false,
+          "text_preview": "Natural Language Processing (NLP) is a field of AI that focuses on the interaction between computers and human language. NLP enables computers to read"
+        }
+      ]
+    },
+    {
+      "chunk_size": 512,
+      "query_id": "1",
+      "query": "python programming",
+      "relevant_ids": [
+        "python_intro",
+        "python_data",
+        "python_web"
+      ],
+      "retrieved_ids": [
+        "python_intro",
+        "python_data",
+        "python_web",
+        "data_visualization",
+        "blockchain_ethereum"
+      ],
+      "results": [
+        {
+          "doc_id": "python_intro",
+          "score": 0.7069908380508423,
+          "is_relevant": true,
+          "text_preview": "Python is a high-level, interpreted programming language known for its simplicity and readability. Created by Guido van Rossum and first released in 1"
+        },
+        {
+          "doc_id": "python_data",
+          "score": 0.5546345710754395,
+          "is_relevant": true,
+          "text_preview": "Python has become the dominant language for data science and machine learning. Libraries like NumPy, Pandas, and Scikit-learn provide powerful tools f"
+        },
+        {
+          "doc_id": "python_web",
+          "score": 0.5234008431434631,
+          "is_relevant": true,
+          "text_preview": "Python is widely used for web development through frameworks like Django and Flask. Django is a high-level web framework that encourages rapid develop"
+        },
+        {
+          "doc_id": "data_visualization",
+          "score": 0.28098514676094055,
+          "is_relevant": false,
+          "text_preview": "Data visualization is the graphical representation of information and data. Effective visualizations help people understand trends, patterns, and outl"
+        },
+        {
+          "doc_id": "blockchain_ethereum",
+          "score": 0.24204431474208832,
+          "is_relevant": false,
+          "text_preview": "Ethereum is a blockchain platform that enables smart contracts and decentralized applications (dApps). Unlike Bitcoin which focuses on peer-to-peer pa"
+        }
+      ]
+    },
+    {
+      "chunk_size": 512,
+      "query_id": "2",
+      "query": "cloud computing platforms",
+      "relevant_ids": [
+        "cloud_aws",
+        "cloud_azure",
+        "cloud_gcp"
+      ],
+      "retrieved_ids": [
+        "cloud_aws",
+        "cloud_gcp",
+        "cloud_azure",
+        "kubernetes",
+        "blockchain_ethereum"
+      ],
+      "results": [
+        {
+          "doc_id": "cloud_aws",
+          "score": 0.6163650155067444,
+          "is_relevant": true,
+          "text_preview": "Amazon Web Services (AWS) is a comprehensive cloud computing platform offering over 200 services including computing power, storage, and databases. AW"
+        },
+        {
+          "doc_id": "cloud_gcp",
+          "score": 0.5925984382629395,
+          "is_relevant": true,
+          "text_preview": "Google Cloud Platform (GCP) is Google's suite of cloud computing services running on the same infrastructure that Google uses internally. GCP is parti"
+        },
+        {
+          "doc_id": "cloud_azure",
+          "score": 0.5247617959976196,
+          "is_relevant": true,
+          "text_preview": "Microsoft Azure is a cloud computing platform that provides services for building, deploying, and managing applications. Azure integrates well with Mi"
+        },
+        {
+          "doc_id": "kubernetes",
+          "score": 0.37575656175613403,
+          "is_relevant": false,
+          "text_preview": "Kubernetes is an open-source container orchestration platform that automates deployment, scaling, and management of containerized applications. Origin"
+        },
+        {
+          "doc_id": "blockchain_ethereum",
+          "score": 0.31448858976364136,
+          "is_relevant": false,
+          "text_preview": "Ethereum is a blockchain platform that enables smart contracts and decentralized applications (dApps). Unlike Bitcoin which focuses on peer-to-peer pa"
+        }
+      ]
+    }
+  ]
+}

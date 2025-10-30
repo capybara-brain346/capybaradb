@@ -8,7 +8,6 @@ __pycache__/
 
 # custom
 *.npz
-benchmark_results/
 
 
 *.sqlite
