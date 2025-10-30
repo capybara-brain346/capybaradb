@@ -5,6 +5,7 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import numpy as np
 from collections import defaultdict
+import argparse
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
@@ -68,6 +69,133 @@ def create_ground_truth():
     return ground_truth
 
 
+def load_cisi_documents(cisi_all_path):
+    documents = {}
+    current_id = None
+    current_field = None
+    current_text = []
+
+    with open(cisi_all_path, "r", encoding="utf-8", errors="ignore") as f:
+        for line in f:
+            line = line.rstrip("\n")
+
+            if line.startswith(".I "):
+                if current_id is not None and current_text:
+                    documents[current_id] = " ".join(current_text).strip()
+
+                current_id = line.split()[1]
+                current_field = None
+                current_text = []
+
+            elif line.startswith(".T") or line.startswith(".W"):
+                current_field = "text"
+            elif (
+                line.startswith(".A") or line.startswith(".B") or line.startswith(".X")
+            ):
+                current_field = "skip"
+            elif current_field == "text" and line.strip():
+                current_text.append(line.strip())
+
+        if current_id is not None and current_text:
+            documents[current_id] = " ".join(current_text).strip()
+
+    return documents
+
+
+def load_cisi_queries(cisi_qry_path):
+    queries = {}
+    current_id = None
+    current_field = None
+    current_text = []
+
+    with open(cisi_qry_path, "r", encoding="utf-8", errors="ignore") as f:
+        for line in f:
+            line = line.rstrip("\n")
+
+            if line.startswith(".I "):
+                if current_id is not None and current_text:
+                    queries[current_id] = " ".join(current_text).strip()
+
+                current_id = line.split()[1]
+                current_field = None
+                current_text = []
+
+            elif line.startswith(".W"):
+                current_field = "text"
+            elif (
+                line.startswith(".T") or line.startswith(".A") or line.startswith(".B")
+            ):
+                current_field = "skip"
+            elif current_field == "text" and line.strip():
+                current_text.append(line.strip())
+
+        if current_id is not None and current_text:
+            queries[current_id] = " ".join(current_text).strip()
+
+    return queries
+
+
+def load_cisi_relevance(cisi_rel_path):
+    relevance = defaultdict(list)
+
+    with open(cisi_rel_path, "r", encoding="utf-8") as f:
+        for line in f:
+            parts = line.strip().split()
+            if len(parts) >= 2:
+                query_id = parts[0]
+                doc_id = parts[1]
+                relevance[query_id].append(doc_id)
+
+    return relevance
+
+
+def check_cisi_dataset(cisi_dir):
+    cisi_path = Path(cisi_dir)
+    required_files = ["CISI.ALL", "CISI.QRY", "CISI.REL"]
+
+    if not cisi_path.exists():
+        return False, f"Directory {cisi_dir} does not exist"
+
+    missing_files = []
+    for file in required_files:
+        if not (cisi_path / file).exists():
+            missing_files.append(file)
+
+    if missing_files:
+        return False, f"Missing required files: {', '.join(missing_files)}"
+
+    return True, "CISI dataset found"
+
+
+def print_cisi_instructions():
+    instructions = """
+    ================================================================================
+    CISI DATASET NOT FOUND
+    ================================================================================
+    
+    To use the CISI dataset for evaluation, please follow these steps:
+    
+    1. Download the CISI dataset from Kaggle:
+       https://www.kaggle.com/datasets/dmaso01dsta/cisi-a-dataset-for-information-retrieval
+    
+    2. Extract the dataset to a directory (e.g., ./cisi_dataset/)
+    
+    3. Ensure the following files are present:
+       - CISI.ALL (1,460 documents)
+       - CISI.QRY (112 queries)
+       - CISI.REL (relevance judgments)
+    
+    4. Run the benchmark with:
+       python benchmark_retrieval_quality.py --dataset cisi --cisi-dir ./cisi_dataset/
+    
+    Alternatively, you can run with the synthetic dataset (default):
+       python benchmark_retrieval_quality.py --dataset synthetic
+    
+    ================================================================================
+    """
+    print(instructions)
+
+
 def calculate_metrics(retrieved_ids, relevant_ids, k):
     retrieved_k = retrieved_ids[:k]
     relevant_set = set(relevant_ids)
@@ -78,247 +206,397 @@ def calculate_metrics(retrieved_ids, relevant_ids, k):
     precision_at_k = true_positives / k if k > 0 else 0
     recall_at_k = true_positives / len(relevant_set) if len(relevant_set) > 0 else 0
 
-    return precision_at_k, recall_at_k
+    f1_at_k = 0
+    if precision_at_k + recall_at_k > 0:
+        f1_at_k = 2 * (precision_at_k * recall_at_k) / (precision_at_k + recall_at_k)
+
+    return precision_at_k, recall_at_k, f1_at_k
 
 
-def benchmark_retrieval_quality():
+def calculate_average_precision(retrieved_ids, relevant_ids):
+    if not relevant_ids:
+        return 0.0
+
+    relevant_set = set(relevant_ids)
+    num_relevant = len(relevant_set)
+
+    precision_sum = 0.0
+    num_relevant_retrieved = 0
+
+    for i, doc_id in enumerate(retrieved_ids, 1):
+        if doc_id in relevant_set:
+            num_relevant_retrieved += 1
+            precision_at_i = num_relevant_retrieved / i
+            precision_sum += precision_at_i
+
+    if num_relevant_retrieved == 0:
+        return 0.0
+
+    return precision_sum / num_relevant
+
+
+def calculate_reciprocal_rank(retrieved_ids, relevant_ids):
+    relevant_set = set(relevant_ids)
+
+    for i, doc_id in enumerate(retrieved_ids, 1):
+        if doc_id in relevant_set:
+            return 1.0 / i
+
+    return 0.0
+
+
+def calculate_dcg(retrieved_ids, relevant_ids, k):
+    retrieved_k = retrieved_ids[:k]
+    relevant_set = set(relevant_ids)
+
+    dcg = 0.0
+    for i, doc_id in enumerate(retrieved_k, 1):
+        if doc_id in relevant_set:
+            rel = 1
+            dcg += rel / np.log2(i + 1)
+
+    return dcg
+
+
+def calculate_ndcg(retrieved_ids, relevant_ids, k):
+    dcg = calculate_dcg(retrieved_ids, relevant_ids, k)
+
+    ideal_retrieved = list(relevant_ids)[:k]
+    idcg = calculate_dcg(ideal_retrieved, relevant_ids, k)
+
+    if idcg == 0:
+        return 0.0
+
+    return dcg / idcg
+
+
+def benchmark_retrieval_quality(dataset_type="synthetic", cisi_dir=None):
     print("=" * 80)
     print("RETRIEVAL QUALITY BENCHMARK")
     print("=" * 80)
 
-    documents = create_test_corpus()
-    ground_truth = create_ground_truth()
+    if dataset_type == "cisi":
+        if cisi_dir is None:
+            print("\nError: CISI directory not specified")
+            print_cisi_instructions()
+            return None
 
-    chunk_sizes = [None, 256, 512, 1024]
-    chunk_size_labels = {
-        None: "No Chunking",
-        256: "256 tokens",
-        512: "512 tokens",
-        1024: "1024 tokens",
-    }
+        exists, message = check_cisi_dataset(cisi_dir)
+        if not exists:
+            print(f"\nError: {message}")
+            print_cisi_instructions()
+            return None
+
+        print(f"\nLoading CISI dataset from {cisi_dir}...")
+        cisi_path = Path(cisi_dir)
+
+        documents_dict = load_cisi_documents(cisi_path / "CISI.ALL")
+        queries_dict = load_cisi_queries(cisi_path / "CISI.QRY")
+        ground_truth = load_cisi_relevance(cisi_path / "CISI.REL")
+
+        documents = documents_dict
+
+        print(f"  Loaded {len(documents)} documents")
+        print(f"  Loaded {len(queries_dict)} queries")
+        print(f"  Loaded relevance judgments for {len(ground_truth)} queries")
+
+        dataset_label = "CISI"
+    else:
+        print("\nUsing synthetic dataset...")
+        documents = create_test_corpus()
+        queries_dict = {
+            str(i): query for i, query in enumerate(create_ground_truth().keys())
+        }
+        ground_truth = create_ground_truth()
+
+        ground_truth_with_str_keys = {}
+        for i, (query, relevant_ids) in enumerate(create_ground_truth().items()):
+            ground_truth_with_str_keys[str(i)] = relevant_ids
+        ground_truth = ground_truth_with_str_keys
+
+        dataset_label = "Synthetic"
+
+    chunk_size = 512
     k_values = [1, 3, 5, 10]
 
     results = {
-        "chunk_sizes": [],
-        "chunk_labels": [],
-        "precision_at_k": defaultdict(list),
-        "recall_at_k": defaultdict(list),
+        "dataset": dataset_label,
+        "chunk_size": chunk_size,
+        "precision_at_k": {},
+        "recall_at_k": {},
+        "f1_at_k": {},
+        "ndcg_at_k": {},
+        "map": 0.0,
+        "mrr": 0.0,
         "examples": [],
     }
 
-    for chunk_size in chunk_sizes:
-        collection_name = f"benchmark_quality_{chunk_size if chunk_size else 'none'}"
-        storage_path = Path("data") / f"{collection_name}.npz"
+    collection_name = f"benchmark_quality_{dataset_label.lower()}"
+    storage_path = Path("data") / f"{collection_name}.npz"
 
-        if storage_path.exists():
-            os.remove(storage_path)
+    if storage_path.exists():
+        os.remove(storage_path)
 
-        chunk_label = chunk_size_labels[chunk_size]
-        print(f"\n{'=' * 80}")
-        print(f"Testing with chunk size: {chunk_label}")
-        print(f"{'=' * 80}")
+    print(f"\n{'=' * 80}")
+    print(f"Testing with chunk size: {chunk_size} tokens")
+    print(f"{'=' * 80}")
 
-        use_chunking = chunk_size is not None
-        db = CapybaraDB(
-            collection=collection_name,
-            chunking=use_chunking,
-            chunk_size=chunk_size if chunk_size else 512,
-            device="cpu",
-        )
-        db.clear()
+    db = CapybaraDB(
+        collection=collection_name,
+        chunking=True,
+        chunk_size=chunk_size,
+        device="cpu",
+    )
+    db.clear()
 
-        doc_id_map = {}
-        for doc_id, text in documents.items():
-            added_id = db.add_document(text, doc_id=doc_id)
-            doc_id_map[added_id] = doc_id
+    doc_id_map = {}
+    for doc_id, text in documents.items():
+        added_id = db.add_document(text, doc_id=doc_id)
+        doc_id_map[added_id] = doc_id
 
-        print(f"  Indexed {len(documents)} documents")
+    print(f"  Indexed {len(documents)} documents")
 
-        all_precisions = defaultdict(list)
-        all_recalls = defaultdict(list)
+    all_precisions = defaultdict(list)
+    all_recalls = defaultdict(list)
+    all_f1s = defaultdict(list)
+    all_ndcgs = defaultdict(list)
+    all_aps = []
+    all_rrs = []
 
-        for query_idx, (query, relevant_ids) in enumerate(ground_truth.items()):
-            search_results = db.search(query, top_k=max(k_values))
+    for query_id, relevant_ids in ground_truth.items():
+        if dataset_type == "cisi":
+            query = queries_dict.get(query_id, "")
+        else:
+            query = queries_dict.get(query_id, "")
 
-            retrieved_doc_ids = []
-            for result in search_results:
-                doc_id = result["doc_id"]
-                if doc_id in retrieved_doc_ids:
-                    continue
-                retrieved_doc_ids.append(doc_id)
+        if not query:
+            continue
 
-            for k in k_values:
-                precision, recall = calculate_metrics(
-                    retrieved_doc_ids, relevant_ids, k
-                )
-                all_precisions[k].append(precision)
-                all_recalls[k].append(recall)
+        search_results = db.search(query, top_k=max(k_values))
 
-            if chunk_size is None and query_idx < 3:
-                print(f"\n  Query: '{query}'")
-                print(f"  Relevant documents: {relevant_ids}")
-                print(f"  Retrieved (top 5):")
-                for i, result in enumerate(search_results[:5]):
-                    doc_id = result["doc_id"]
-                    score = result["score"]
-                    is_relevant = (
-                        "✓ RELEVANT" if doc_id in relevant_ids else "✗ Not relevant"
-                    )
-                    text_preview = (
-                        result["text"][:100] + "..."
-                        if len(result["text"]) > 100
-                        else result["text"]
-                    )
-                    print(f"    {i + 1}. [{doc_id}] (score: {score:.4f}) {is_relevant}")
-                    print(f"       {text_preview}")
+        retrieved_doc_ids = []
+        for result in search_results:
+            doc_id = result["doc_id"]
+            if doc_id in retrieved_doc_ids:
+                continue
+            retrieved_doc_ids.append(doc_id)
 
-                example = {
-                    "chunk_size": chunk_label,
-                    "query": query,
-                    "relevant_ids": relevant_ids,
-                    "retrieved_ids": retrieved_doc_ids[:5],
-                    "results": [
-                        {
-                            "doc_id": r["doc_id"],
-                            "score": float(r["score"]),
-                            "is_relevant": r["doc_id"] in relevant_ids,
-                            "text_preview": r["text"][:150],
-                        }
-                        for r in search_results[:5]
-                    ],
-                }
-                results["examples"].append(example)
+        ap = calculate_average_precision(retrieved_doc_ids, relevant_ids)
+        all_aps.append(ap)
 
-        results["chunk_sizes"].append(chunk_size if chunk_size else 0)
-        results["chunk_labels"].append(chunk_label)
+        rr = calculate_reciprocal_rank(retrieved_doc_ids, relevant_ids)
+        all_rrs.append(rr)
 
         for k in k_values:
-            avg_precision = np.mean(all_precisions[k])
-            avg_recall = np.mean(all_recalls[k])
-            results["precision_at_k"][k].append(avg_precision)
-            results["recall_at_k"][k].append(avg_recall)
+            precision, recall, f1 = calculate_metrics(
+                retrieved_doc_ids, relevant_ids, k
+            )
+            all_precisions[k].append(precision)
+            all_recalls[k].append(recall)
+            all_f1s[k].append(f1)
 
-            print(f"\n  Metrics for K={k}:")
-            print(f"    Average Precision@{k}: {avg_precision:.4f}")
-            print(f"    Average Recall@{k}: {avg_recall:.4f}")
+            ndcg = calculate_ndcg(retrieved_doc_ids, relevant_ids, k)
+            all_ndcgs[k].append(ndcg)
 
-        if storage_path.exists():
-            os.remove(storage_path)
+    num_examples = 3 if dataset_type == "synthetic" else 5
+    query_ids_for_examples = list(ground_truth.keys())[:num_examples]
+
+    for query_id in query_ids_for_examples:
+        relevant_ids = ground_truth[query_id]
+        if dataset_type == "cisi":
+            query = queries_dict.get(query_id, "")
+        else:
+            query = queries_dict.get(query_id, "")
+
+        if not query:
+            continue
+
+        search_results = db.search(query, top_k=5)
+        retrieved_doc_ids = []
+        for result in search_results:
+            doc_id = result["doc_id"]
+            if doc_id not in retrieved_doc_ids:
+                retrieved_doc_ids.append(doc_id)
+
+        print(f"\n  Query ID {query_id}: '{query[:80]}...'")
+        print(f"  Relevant documents: {relevant_ids[:10]}")
+        print("  Retrieved (top 5):")
+        for i, result in enumerate(search_results[:5]):
+            doc_id = result["doc_id"]
+            score = result["score"]
+            is_relevant = "✓ RELEVANT" if doc_id in relevant_ids else "✗ Not relevant"
+            text_preview = (
+                result["text"][:80] + "..."
+                if len(result["text"]) > 80
+                else result["text"]
+            )
+            print(f"    {i + 1}. [{doc_id}] (score: {score:.4f}) {is_relevant}")
+            print(f"       {text_preview}")
+
+        example = {
+            "chunk_size": chunk_size,
+            "query_id": query_id,
+            "query": query,
+            "relevant_ids": relevant_ids,
+            "retrieved_ids": retrieved_doc_ids[:5],
+            "results": [
+                {
+                    "doc_id": r["doc_id"],
+                    "score": float(r["score"]),
+                    "is_relevant": r["doc_id"] in relevant_ids,
+                    "text_preview": r["text"][:150],
+                }
+                for r in search_results[:5]
+            ],
+        }
+        results["examples"].append(example)
+
+    mean_ap = np.mean(all_aps) if all_aps else 0.0
+    mean_rr = np.mean(all_rrs) if all_rrs else 0.0
+    results["map"] = mean_ap
+    results["mrr"] = mean_rr
+
+    print("\n  Overall Metrics:")
+    print(f"    MAP (Mean Average Precision): {mean_ap:.4f}")
+    print(f"    MRR (Mean Reciprocal Rank): {mean_rr:.4f}")
+
+    for k in k_values:
+        avg_precision = np.mean(all_precisions[k])
+        avg_recall = np.mean(all_recalls[k])
+        avg_f1 = np.mean(all_f1s[k])
+        avg_ndcg = np.mean(all_ndcgs[k])
+
+        results["precision_at_k"][k] = avg_precision
+        results["recall_at_k"][k] = avg_recall
+        results["f1_at_k"][k] = avg_f1
+        results["ndcg_at_k"][k] = avg_ndcg
+
+        print(f"\n  Metrics for K={k}:")
+        print(f"    Precision@{k}: {avg_precision:.4f}")
+        print(f"    Recall@{k}: {avg_recall:.4f}")
+        print(f"    F1@{k}: {avg_f1:.4f}")
+        print(f"    NDCG@{k}: {avg_ndcg:.4f}")
+
+    if storage_path.exists():
+        os.remove(storage_path)
 
     output_dir = Path("benchmark_results")
     output_dir.mkdir(exist_ok=True)
 
-    json_output = output_dir / "retrieval_quality.json"
-    results_serializable = {
-        "chunk_sizes": results["chunk_sizes"],
-        "chunk_labels": results["chunk_labels"],
-        "precision_at_k": {k: v for k, v in results["precision_at_k"].items()},
-        "recall_at_k": {k: v for k, v in results["recall_at_k"].items()},
-        "examples": results["examples"],
-    }
+    json_output = output_dir / f"retrieval_quality_{dataset_label.lower()}.json"
     with open(json_output, "w") as f:
-        json.dump(results_serializable, f, indent=2)
+        json.dump(results, f, indent=2)
 
     print(f"\n{'=' * 80}")
     print(f"Results saved to {json_output}")
     print(f"{'=' * 80}")
 
     fig, axes = plt.subplots(2, 2, figsize=(14, 10))
-    fig.suptitle("Retrieval Quality Benchmark", fontsize=16, fontweight="bold")
-
-    x_pos = np.arange(len(results["chunk_labels"]))
-    width = 0.2
-
-    for i, k in enumerate([1, 3, 5, 10]):
-        ax = axes[i // 2, i % 2]
-
-        precision_values = results["precision_at_k"][k]
-        recall_values = results["recall_at_k"][k]
-
-        ax.bar(
-            x_pos - width / 2,
-            precision_values,
-            width,
-            label=f"Precision@{k}",
-            alpha=0.8,
-        )
-        ax.bar(x_pos + width / 2, recall_values, width, label=f"Recall@{k}", alpha=0.8)
-
-        ax.set_xlabel("Chunk Size", fontsize=12)
-        ax.set_ylabel("Score", fontsize=12)
-        ax.set_title(f"Precision and Recall @ K={k}", fontsize=14, fontweight="bold")
-        ax.set_xticks(x_pos)
-        ax.set_xticklabels(results["chunk_labels"], rotation=15, ha="right")
-        ax.legend()
-        ax.grid(True, alpha=0.3, axis="y")
-        ax.set_ylim([0, 1.0])
-
-    plt.tight_layout()
-
-    plot_output = output_dir / "retrieval_quality.png"
-    plt.savefig(plot_output, dpi=300, bbox_inches="tight")
-    print(f"Plot saved to {plot_output}")
-
-    fig2, axes2 = plt.subplots(1, 2, figsize=(14, 5))
-    fig2.suptitle(
-        "Retrieval Quality - Effect of Chunk Size", fontsize=16, fontweight="bold"
+    fig.suptitle(
+        f"Retrieval Quality Benchmark - {dataset_label} Dataset (Chunk Size: {chunk_size})",
+        fontsize=16,
+        fontweight="bold",
     )
 
-    for k in k_values:
-        axes2[0].plot(
-            x_pos,
-            results["precision_at_k"][k],
-            "o-",
-            label=f"K={k}",
-            linewidth=2,
-            markersize=8,
-        )
-    axes2[0].set_xlabel("Chunk Size", fontsize=12)
-    axes2[0].set_ylabel("Precision", fontsize=12)
-    axes2[0].set_title("Precision@K vs Chunk Size", fontsize=14, fontweight="bold")
-    axes2[0].set_xticks(x_pos)
-    axes2[0].set_xticklabels(results["chunk_labels"], rotation=15, ha="right")
-    axes2[0].legend()
-    axes2[0].grid(True, alpha=0.3)
-    axes2[0].set_ylim([0, 1.0])
+    k_list = list(k_values)
+    x_pos = np.arange(len(k_list))
+    width = 0.2
 
-    for k in k_values:
-        axes2[1].plot(
-            x_pos,
-            results["recall_at_k"][k],
-            "o-",
-            label=f"K={k}",
-            linewidth=2,
-            markersize=8,
-        )
-    axes2[1].set_xlabel("Chunk Size", fontsize=12)
-    axes2[1].set_ylabel("Recall", fontsize=12)
-    axes2[1].set_title("Recall@K vs Chunk Size", fontsize=14, fontweight="bold")
-    axes2[1].set_xticks(x_pos)
-    axes2[1].set_xticklabels(results["chunk_labels"], rotation=15, ha="right")
-    axes2[1].legend()
-    axes2[1].grid(True, alpha=0.3)
-    axes2[1].set_ylim([0, 1.0])
+    precision_values = [results["precision_at_k"][k] for k in k_list]
+    recall_values = [results["recall_at_k"][k] for k in k_list]
+    f1_values = [results["f1_at_k"][k] for k in k_list]
+    ndcg_values = [results["ndcg_at_k"][k] for k in k_list]
+
+    ax = axes[0, 0]
+    ax.bar(
+        x_pos - 1.5 * width,
+        precision_values,
+        width,
+        label="Precision",
+        alpha=0.8,
+    )
+    ax.bar(x_pos - 0.5 * width, recall_values, width, label="Recall", alpha=0.8)
+    ax.bar(x_pos + 0.5 * width, f1_values, width, label="F1", alpha=0.8)
+    ax.bar(x_pos + 1.5 * width, ndcg_values, width, label="NDCG", alpha=0.8)
+    ax.set_xlabel("K", fontsize=12)
+    ax.set_ylabel("Score", fontsize=12)
+    ax.set_title("All Metrics @K", fontsize=13, fontweight="bold")
+    ax.set_xticks(x_pos)
+    ax.set_xticklabels([f"K={k}" for k in k_list])
+    ax.legend()
+    ax.grid(True, alpha=0.3, axis="y")
+    ax.set_ylim([0, 1.0])
+
+    ax = axes[0, 1]
+    ax.bar(x_pos, precision_values, width=0.6, alpha=0.8, color="steelblue")
+    ax.set_xlabel("K", fontsize=12)
+    ax.set_ylabel("Precision", fontsize=12)
+    ax.set_title("Precision@K", fontsize=13, fontweight="bold")
+    ax.set_xticks(x_pos)
+    ax.set_xticklabels([f"K={k}" for k in k_list])
+    ax.grid(True, alpha=0.3, axis="y")
+    ax.set_ylim([0, 1.0])
+
+    ax = axes[1, 0]
+    ax.bar(x_pos, recall_values, width=0.6, alpha=0.8, color="darkorange")
+    ax.set_xlabel("K", fontsize=12)
+    ax.set_ylabel("Recall", fontsize=12)
+    ax.set_title("Recall@K", fontsize=13, fontweight="bold")
+    ax.set_xticks(x_pos)
+    ax.set_xticklabels([f"K={k}" for k in k_list])
+    ax.grid(True, alpha=0.3, axis="y")
+    ax.set_ylim([0, 1.0])
+
+    ax = axes[1, 1]
+    ax.bar(x_pos, ndcg_values, width=0.6, alpha=0.8, color="forestgreen")
+    ax.set_xlabel("K", fontsize=12)
+    ax.set_ylabel("NDCG", fontsize=12)
+    ax.set_title("NDCG@K", fontsize=13, fontweight="bold")
+    ax.set_xticks(x_pos)
+    ax.set_xticklabels([f"K={k}" for k in k_list])
+    ax.grid(True, alpha=0.3, axis="y")
+    ax.set_ylim([0, 1.0])
 
     plt.tight_layout()
 
-    plot_output2 = output_dir / "retrieval_quality_chunk_effect.png"
-    plt.savefig(plot_output2, dpi=300, bbox_inches="tight")
-    print(f"Chunk size effect plot saved to {plot_output2}")
+    plot_output = output_dir / f"retrieval_quality_{dataset_label.lower()}.png"
+    plt.savefig(plot_output, dpi=300, bbox_inches="tight")
+    print(f"Plot saved to {plot_output}")
+    plt.close()
 
     print(f"\n{'=' * 80}")
     print("SUMMARY STATISTICS")
     print(f"{'=' * 80}")
-    for i, chunk_label in enumerate(results["chunk_labels"]):
-        print(f"\n{chunk_label}:")
-        for k in k_values:
-            precision = results["precision_at_k"][k][i]
-            recall = results["recall_at_k"][k][i]
-            print(f"  K={k:2d} - Precision: {precision:.4f}, Recall: {recall:.4f}")
+    print(f"\nDataset: {dataset_label}")
+    print(f"Chunk Size: {chunk_size} tokens")
+    print("\nOverall Metrics:")
+    print(f"  MAP: {results['map']:.4f}")
+    print(f"  MRR: {results['mrr']:.4f}")
+    print("\nMetrics at Different K Values:")
+    for k in k_values:
+        precision = results["precision_at_k"][k]
+        recall = results["recall_at_k"][k]
+        f1 = results["f1_at_k"][k]
+        ndcg = results["ndcg_at_k"][k]
+        print(
+            f"  K={k:2d} - P: {precision:.4f}, R: {recall:.4f}, F1: {f1:.4f}, NDCG: {ndcg:.4f}"
+        )
     print(f"{'=' * 80}\n")
 
     return results
 
 
 if __name__ == "__main__":
-    benchmark_retrieval_quality()
+    parser = argparse.ArgumentParser(
+        description="Benchmark retrieval quality using synthetic or CISI dataset"
+    )
+    parser.add_argument(
+        "--dataset",
+        type=str,
+        choices=["synthetic", "cisi"],
+        default="synthetic",
+        help="Dataset to use for evaluation (default: synthetic)",
+    )
+    args = parser.parse_args()
+
+    benchmark_retrieval_quality(dataset_type=args.dataset, cisi_dir="./cisi")
