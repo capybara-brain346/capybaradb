@@ -1,8 +1,9 @@
 import logging
-from typing import Literal, List, Union
-from transformers import AutoTokenizer, AutoModel
+from typing import List, Literal, Union
+
 import torch
 import torch.nn.functional as F
+from transformers import AutoModel, AutoTokenizer
 
 from .logger import setup_logger
 

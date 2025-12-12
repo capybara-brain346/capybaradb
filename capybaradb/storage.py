@@ -1,11 +1,12 @@
-import numpy as np
-import torch
+import logging
 from pathlib import Path
 from typing import Optional
-import logging
 
-from .logger import setup_logger
+import numpy as np
+import torch
+
 from .base import BaseIndex
+from .logger import setup_logger
 
 
 class Storage:

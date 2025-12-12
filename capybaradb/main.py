@@ -1,14 +1,15 @@
 import logging
-from typing import Dict, List, Union, Optional
-import torch
 import uuid
-import tiktoken
-from typing_extensions import Literal
 from pathlib import Path
+from typing import Dict, List, Optional, Union
 
+import tiktoken
+import torch
+from typing_extensions import Literal
+
+from .base import BaseIndex
 from .logger import setup_logger
 from .model import EmbeddingModel
-from .base import BaseIndex
 from .storage import Storage
 
 

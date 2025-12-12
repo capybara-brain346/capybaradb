@@ -1,6 +1,6 @@
 from typing import Dict, List, Optional
+
 import torch
-from pathlib import Path
 
 
 class BaseIndex:

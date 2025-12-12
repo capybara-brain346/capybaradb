@@ -1,12 +1,13 @@
+import logging
 from pathlib import Path
-from typing import Union, List
+from typing import List, Union
+
 import pypdf
+import torch
 from docx import Document
 from pdf2image import convert_from_path
 from PIL import Image
-import torch
-from transformers import VisionEncoderDecoderModel, TrOCRProcessor
-import logging
+from transformers import TrOCRProcessor, VisionEncoderDecoderModel
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
